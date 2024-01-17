@@ -1,0 +1,19 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "../../../../../../Downloads/uAPI_WSDLschema_Release-V22.3.1.9440/air_v52_0/Air.wsdl"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "namespaceMappings": [
+      "*, AirService"
+    ],
+    "references": [
+      "Newtonsoft.Json, {Newtonsoft.Json, 13.0.3}"
+    ],
+    "targetFramework": "net6.0",
+    "typeReuseMode": "All"
+  }
+}
