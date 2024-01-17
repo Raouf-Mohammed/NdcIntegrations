@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace NdcIntegrations.Domain.CommonInterface
+namespace NdcIntegrations.Core.CommonInterface
 {
     public class SearchCriterionType
     {

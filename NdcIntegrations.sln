@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34302.85
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NdcIntegrations.Domain", "NdcIntegrations.Domain\NdcIntegrations.Domain.csproj", "{95097054-9F79-41CE-9A63-3978CD9ACF9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NdcIntegrations.Core", "NdcIntegrations.Domain\NdcIntegrations.Core.csproj", "{BBF10E9D-BDF9-40CC-B905-CEC0B62D38E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{95097054-9F79-41CE-9A63-3978CD9ACF9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{95097054-9F79-41CE-9A63-3978CD9ACF9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{95097054-9F79-41CE-9A63-3978CD9ACF9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{95097054-9F79-41CE-9A63-3978CD9ACF9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBF10E9D-BDF9-40CC-B905-CEC0B62D38E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBF10E9D-BDF9-40CC-B905-CEC0B62D38E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBF10E9D-BDF9-40CC-B905-CEC0B62D38E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBF10E9D-BDF9-40CC-B905-CEC0B62D38E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
