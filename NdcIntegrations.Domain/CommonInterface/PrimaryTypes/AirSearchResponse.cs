@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NdcIntegrations.Domain.CommonInterface
+namespace NdcIntegrations.Core.CommonInterface
 {
     public class AirSearchResponse
     {

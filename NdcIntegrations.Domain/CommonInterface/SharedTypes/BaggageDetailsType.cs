@@ -1,4 +1,4 @@
-﻿namespace NdcIntegrations.Domain.CommonInterface
+﻿namespace NdcIntegrations.Core.CommonInterface
 {
     public class BaggageDetailsType
     {
