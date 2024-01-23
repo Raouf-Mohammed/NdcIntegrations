@@ -1,4 +1,6 @@
-﻿using NdcIntegrations.Domain.CommonInterface;
+﻿using AirService;
+using Microsoft.Extensions.Configuration;
+using NdcIntegrations.Core.CommonInterface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,10 @@ namespace NdcIntegrations.Domain.Indigo
 {
     public class IndigoMapper
     {
-		 public static AirSearchResponse? IndigoMapperSearchResponse(AirService.LowFareSearchRsp lowFareSearchRsp)
+        private static IConfigurationRoot IndigoConfiguration = new ConfigurationBuilder()
+                                .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "IndigoConfig.json"), optional: false, reloadOnChange: true)
+                                .Build();
+        public static AirSearchResponse? IndigoMapperSearchResponse(AirService.LowFareSearchRsp lowFareSearchRsp)
          {
             if (lowFareSearchRsp == null) return null;
             AirSearchResponse airSearchResponse = new AirSearchResponse();
@@ -22,6 +27,7 @@ namespace NdcIntegrations.Domain.Indigo
             var fareInfoList = lowFareSearchRsp.FareInfoList;
             var routeList = lowFareSearchRsp.RouteList[0].Leg;
             var airPriceSolution = Array.ConvertAll(lowFareSearchRsp.Items, prop => (AirService.AirPricingSolution)prop);
+            airPriceSolution = airPriceSolution.Where(x => x.CompleteItinerary = true).ToArray();
             foreach (var segment in lowFareSearchRsp.AirSegmentList)
             {
                 var segmentType = new SegmentType()
@@ -57,6 +63,8 @@ namespace NdcIntegrations.Domain.Indigo
                 var offer = new OfferType()
                 {
                     OfferId = solution.Key,
+                    OfferJourneys = new List<string>(),
+                    PassengerFareBreakdown = new List<PassengerFareBreakdownType>() ,
                     PriceDetails = new PriceDetailsType()
                     {
                         TotalAmount = decimal.Parse(solution.TotalPrice.Skip(3).ToString()),
@@ -70,8 +78,6 @@ namespace NdcIntegrations.Domain.Indigo
                         }).ToList()
 
                     },
-                    PassengerFareBreakdown = new List<PassengerFareBreakdownType>() ,
-                    OfferJourneys = new List<string>(),
                    
                 };
                 for (int i = 0; i < solution.Journey.Length; i++) 
@@ -104,9 +110,9 @@ namespace NdcIntegrations.Domain.Indigo
                         SegmentDetails = airPricingInfo.BookingInfo.Select(x => new SegmentDetailsType()
                         {
                             SegmentRefId=x.SegmentRef,
+                            PriceClassRefId=fareInfoList.FirstOrDefault(y=>y.Key == x.FareInfoRef).Brand.BrandID,
                             CabinCode =x.CabinClass,
                             RBD=x.BookingCode,
-                            PriceClassRefId=fareInfoList.FirstOrDefault(y=>y.Key ==x.FareInfoRef).Brand.BrandID,
                             BaggageDetailsRefId="",
 
                         }).ToList()
@@ -119,5 +125,102 @@ namespace NdcIntegrations.Domain.Indigo
             
             return airSearchResponse;
          }
-	}
+        public static AirService.LowFareSearchReq? IndigoMapperSearchRequest(AirSearchRequest airSearchRequest)
+        {
+            if(airSearchRequest == null) return null;
+            AirService.LowFareSearchReq lowFareSearchReq = new AirService.LowFareSearchReq();
+            lowFareSearchReq.TraceId = IndigoConfiguration["TraceId"];
+            lowFareSearchReq.TargetBranch = IndigoConfiguration["TargetBranch"];
+            lowFareSearchReq.AuthorizedBy = IndigoConfiguration["AuthorizedBy"];
+            lowFareSearchReq.SolutionResult = IndigoConfiguration["SolutionResult"] == "true" ? true:false;
+            lowFareSearchReq.ReturnUpsellFare = IndigoConfiguration["ReturnUpsellFare"] =="true" ? true:false;
+            lowFareSearchReq.BillingPointOfSaleInfo.OriginApplication = IndigoConfiguration["OriginApplication"];
+                               
+            lowFareSearchReq.Items = new SearchAirLeg[] { };
+            for(int i=0; i< airSearchRequest.SearchCriteria.Count; i++)
+            {
+                var searchLeg = new SearchAirLeg()
+                {
+                    SearchOrigin = new typeSearchLocation[]
+                    {
+                        new typeSearchLocation
+                        {
+                            Item = new CityOrAirport
+                            {
+                                Code = airSearchRequest.SearchCriteria.ToList()[i].Origin,
+                                PreferCity = true,
+                            }
+                        }
+                    },
+                    SearchDestination = new typeSearchLocation[]
+                    {
+                        new typeSearchLocation
+                        {
+                            Item = new CityOrAirport
+                            {
+                                Code = airSearchRequest.SearchCriteria.ToList()[i].Destination,
+                                PreferCity = true,
+                            }
+                        }
+                    },
+                    Items = new typeTimeSpec[]
+                    {
+                        new typeTimeSpec
+                        {
+                             PreferredTime = airSearchRequest.SearchCriteria.ToList()[i].Date.ToString("yyyy-MM-dd")
+                        }
+                    }
+                };
+                lowFareSearchReq.Items = lowFareSearchReq.Items.Append(searchLeg).ToArray();
+            }
+            lowFareSearchReq.AirSearchModifiers.PreferredProviders[0].Code = "ACH";
+            lowFareSearchReq.SearchPassenger = new SearchPassenger[] { };
+            for (int i = 0; i < airSearchRequest.Passengers.Count; i++) 
+            {
+                SearchPassenger searchPassenger = new SearchPassenger
+                {
+                    Code = airSearchRequest.Passengers.ToList()[i].PassengerTypeCode,
+                };
+                lowFareSearchReq.SearchPassenger = lowFareSearchReq.SearchPassenger.Append(searchPassenger).ToArray();
+            }
+
+            return lowFareSearchReq;
+        }
+        public static List<  Dictionary<string, List<SegmentData>>> GetFareCofirnmCachingData(AirService.LowFareSearchRsp lowFareSearchRsp)
+        {
+            var fareConfirmCachingData = new List<Dictionary<string, List<SegmentData>>>();
+            var airPriceSolution = Array.ConvertAll(lowFareSearchRsp.Items, prop => (AirService.AirPricingSolution)prop);
+            airPriceSolution = airPriceSolution.Where(x => x.CompleteItinerary = true).ToArray();
+            foreach (var solution in airPriceSolution)
+            {
+                var solutionCachingData = new Dictionary<string, List<SegmentData>>();
+                var segmentDataList = new List<SegmentData> ();
+                
+                foreach (var bookingInfo in solution.AirPricingInfo[0].BookingInfo)
+                {
+                    var segment = lowFareSearchRsp.AirSegmentList.FirstOrDefault(x => x.Key == bookingInfo.SegmentRef);
+
+                    var segmentData = new SegmentData
+                    {
+                        AirSegmentKey = bookingInfo.SegmentRef,
+                        Group = segment.Group,
+                        Carrier = segment.Carrier,
+                        FlightNumber = segment.FlightNumber,
+                        Origin = segment.Origin,
+                        Destination = segment.Destination,
+                        DepartureTime = segment.DepartureTime,
+                        ArrivalTime = segment.ArrivalTime,
+                        ProviderCode = segment.ProviderCode,
+                        HostTokenRef = bookingInfo.HostTokenRef,
+                        FareBasisCode = lowFareSearchRsp.FareInfoList.FirstOrDefault(c => c.Key == bookingInfo.FareInfoRef).FareBasis
+                        
+                    };
+                    segmentDataList.Add(segmentData);
+                }
+                solutionCachingData.TryAdd(solution.Key, segmentDataList);
+                fareConfirmCachingData.Add(solutionCachingData);   
+            }
+            return fareConfirmCachingData;
+        }
+    }   
 }
