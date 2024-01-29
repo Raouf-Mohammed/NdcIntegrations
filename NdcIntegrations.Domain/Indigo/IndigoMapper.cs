@@ -210,7 +210,7 @@ namespace NdcIntegrations.Domain.Indigo
                         Destination = segment.Destination,
                         DepartureTime = segment.DepartureTime,
                         ArrivalTime = segment.ArrivalTime,
-                        ProviderCode = segment.ProviderCode,
+                        ProviderCode = segment.AirAvailInfo[0].ProviderCode,
                         HostTokenRef = bookingInfo.HostTokenRef,
                         FareBasisCode = lowFareSearchRsp.FareInfoList.FirstOrDefault(c => c.Key == bookingInfo.FareInfoRef).FareBasis
                         
