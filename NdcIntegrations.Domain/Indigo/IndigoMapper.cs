@@ -1,6 +1,7 @@
 ﻿using AirService;
 using Microsoft.Extensions.Configuration;
 using NdcIntegrations.Core.CommonInterface;
+using NdcIntegrations.Core.Indigo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -186,16 +187,16 @@ namespace NdcIntegrations.Domain.Indigo
 
             return lowFareSearchReq;
         }
-        public static List<  Dictionary<string, List<SegmentData>>> GetFareCofirnmCachingData(AirService.LowFareSearchRsp lowFareSearchRsp)
+        public static List<  Dictionary<string, FareConfirmData>> GetFareCofirnmCachingData(AirService.LowFareSearchRsp lowFareSearchRsp)
         {
-            var fareConfirmCachingData = new List<Dictionary<string, List<SegmentData>>>();
+            var fareConfirmCachingData = new List<Dictionary<string,FareConfirmData>>();
             var airPriceSolution = Array.ConvertAll(lowFareSearchRsp.Items, prop => (AirService.AirPricingSolution)prop);
             airPriceSolution = airPriceSolution.Where(x => x.CompleteItinerary = true).ToArray();
             foreach (var solution in airPriceSolution)
             {
-                var solutionCachingData = new Dictionary<string, List<SegmentData>>();
-                var segmentDataList = new List<SegmentData> ();
-                
+                var solutionCachingData = new Dictionary<string, FareConfirmData>();
+                var fareConfirmData = new FareConfirmData ();
+                fareConfirmData.SegmentsData = new List<SegmentData>();
                 foreach (var bookingInfo in solution.AirPricingInfo[0].BookingInfo)
                 {
                     var segment = lowFareSearchRsp.AirSegmentList.FirstOrDefault(x => x.Key == bookingInfo.SegmentRef);
@@ -212,12 +213,30 @@ namespace NdcIntegrations.Domain.Indigo
                         ArrivalTime = segment.ArrivalTime,
                         ProviderCode = segment.AirAvailInfo[0].ProviderCode,
                         HostTokenRef = bookingInfo.HostTokenRef,
-                        FareBasisCode = lowFareSearchRsp.FareInfoList.FirstOrDefault(c => c.Key == bookingInfo.FareInfoRef).FareBasis
-                        
+                        HostTokenValue=lowFareSearchRsp.HostTokenList.FirstOrDefault(x=>x.Key== bookingInfo.HostTokenRef).Value,
+                        FareBasisCode =lowFareSearchRsp.FareInfoList.FirstOrDefault(c => c.Key == bookingInfo.FareInfoRef).FareBasis   
                     };
-                    segmentDataList.Add(segmentData);
+                    fareConfirmData.SegmentsData.Add(segmentData);
                 }
-                solutionCachingData.TryAdd(solution.Key, segmentDataList);
+                fareConfirmData.Passanager = new Dictionary<string,int>();
+
+                foreach(var airPricingInfo in solution.AirPricingInfo)
+                {
+                    foreach (var passangerType in airPricingInfo.PassengerType)
+                    {
+                        if (fareConfirmData.Passanager.ContainsKey(passangerType.Code) == true)
+                        {
+                            fareConfirmData.Passanager[passangerType.Code]++;
+                        }
+                        else
+                        {
+                            fareConfirmData.Passanager.TryAdd(passangerType.Code, 1);
+
+                        }
+
+                    }
+                }
+                solutionCachingData.TryAdd(solution.Key, fareConfirmData);
                 fareConfirmCachingData.Add(solutionCachingData);   
             }
             return fareConfirmCachingData;

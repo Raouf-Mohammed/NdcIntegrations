@@ -12,6 +12,7 @@
          public string ArrivalTime { get; set; }
          public string ProviderCode { get; set; }
          public string HostTokenRef { get; set; }
+         public string HostTokenValue { get; set; }
         public string FareBasisCode { get; set; }
 
     }
